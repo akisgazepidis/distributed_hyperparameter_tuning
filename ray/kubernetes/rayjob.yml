@@ -1,0 +1,9 @@
+apiVersion: ray.io/v1
+kind: RayJob
+metadata:
+  name: distributed-training
+  namespace: ml-tuning
+spec:
+  entrypoint: python /app/train.py --C 2.5 --max_iter 228 --workers 2
+  clusterSelector:
+    ray.io/cluster: ray-training-cluster

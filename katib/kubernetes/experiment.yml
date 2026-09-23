@@ -1,0 +1,65 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: digits-hyperparameter-tuning
+  namespace: ml-tuning
+spec:
+  objective:
+    type: maximize
+    goal: 0.98
+    objectiveMetricName: accuracy
+
+  algorithm:
+    algorithmName: random
+
+  retainAllTrials: true
+  parallelTrialCount: 3
+  maxTrialCount: 6
+  maxFailedTrialCount: 2
+
+  parameters:
+    - name: c
+      parameterType: double
+      feasibleSpace:
+        min: "0.01"
+        max: "10.0"
+
+    - name: max-iter
+      parameterType: int
+      feasibleSpace:
+        min: "100"
+        max: "500"
+
+  trialTemplate:
+    primaryContainerName: training-container
+
+    trialParameters:
+      - name: c
+        reference: c
+      - name: max-iter
+        reference: max-iter
+
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: training-container
+                image: katib-training:local
+                imagePullPolicy: IfNotPresent
+                command:
+                  - python
+                  - train.py
+                args:
+                  - "--C=${trialParameters.c}"
+                  - "--max_iter=${trialParameters.max-iter}"
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "1"
+                    memory: "512Mi"
